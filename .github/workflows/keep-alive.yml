@@ -2,20 +2,26 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    # Runs every 3 days at 12:00 UTC
-    - cron: '0 12 */3 * *'
+    - cron: '0 12 */6 * *'   # every 6 days at 12:00 UTC
   workflow_dispatch:
+
+permissions: {}
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Ping Supabase REST API
+      - name: Query Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          CLEAN_URL=$(echo "${{ secrets.SUPABASE_URL }}" | tr -d '[:space:]')
-          CLEAN_KEY=$(echo "${{ secrets.SUPABASE_ANON_KEY }}" | tr -d '[:space:]')
-          
-          curl -f -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" \
-            -H "apikey: $CLEAN_KEY" \
-            -H "Authorization: Bearer $CLEAN_KEY" \
-            "$CLEAN_URL/rest/v1/"
+          URL=$(echo "$SUPABASE_URL" | tr -d '[:space:]')
+          KEY=$(echo "$SUPABASE_ANON_KEY" | tr -d '[:space:]')
+          curl --fail --silent --show-error \
+            --max-time 30 --retry 3 --retry-delay 10 \
+            -o /dev/null -w "HTTP Status: %{http_code}\n" \
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY" \
+            "$URL/rest/v1/YOUR_TABLE?select=id&limit=1"
