@@ -31,4 +31,8 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow enable "Keep Supabase Alive" --repo "${{ github.repository }}"
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+        run: |
+          FILE=$(basename "${WORKFLOW_REF%%@*}")
+          echo "Re-enabling $FILE"
+          gh workflow enable "$FILE" --repo "${{ github.repository }}"
